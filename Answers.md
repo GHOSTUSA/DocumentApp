@@ -19,8 +19,26 @@ ctrl /
 
 On peut chnager l'appareil dans la barre du haut
  
-### 3-Délégation
+# 3-Délégation
 
 ## Exercie 1
 
 Elle peut etre utiliser sans créer d'instance
+
+# 4-Navigation
+
+## Exercie 1
+
+Le NavigationController gère une pile de vue et permet de naviguer entre elles et ajoute également une barre de navigation en haut de l'écran
+La NavigationBar et NavigationController ne sont pas la même chose, NavigationController sert à naviger entre les pages alors que l'autre un juste un élement visuel
+
+# 6-Ecran Detail
+
+## Exercie 1
+
+Un sergue permet de faire la transition entre 2 ecrans
+
+## Exercice 2
+
+c'est une règle qui définit la position, la taille et les relations entre les différents éléments d'interface dans une vue 
+

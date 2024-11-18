@@ -9,74 +9,126 @@ import UIKit
 
 class DocumentTableViewController: UITableViewController {
     
-    // Structure des données des documents
-    struct DocumentFile {
-        var title: String
-        var size: Int
-        var imageName: String? = nil
-        var url: URL
-        var type: String
+    // Déclaration d'une variable pour stocker les documents chargés
+    var documentListBundle: [DocumentFile] = []
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Charger les fichiers dès que la vue est prête
+        documentListBundle = listFileInBundle()
+        
+        // Optionnel : recharger la table si les données changent (par exemple, si tu ajoutes des documents dynamiquement)
+        tableView.reloadData()
     }
-
-    // Données statiques à afficher dans la table
-    static let testDocuments: [DocumentFile] = [
-        DocumentFile(title: "Document 1", size: 100, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 2", size: 200, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 3", size: 300, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 4", size: 400, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 5", size: 500, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 6", size: 600, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 7", size: 700, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 8", size: 800, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 9", size: 900, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain"),
-        DocumentFile(title: "Document 10", size: 1000, imageName: nil, url: URL(string: "https://www.apple.com")!, type: "text/plain")
-    ]
     
     // Indique au Controller combien de sections il doit afficher
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1 // Une seule section dans ce cas
     }
-
+    
     // Indique au Controller combien de cellules il doit afficher
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return DocumentTableViewController.testDocuments.count // Retourne le nombre de documents à afficher
+        return documentListBundle.count // Retourne le nombre de documents à afficher
     }
     
-    // Indique au Controller comment remplir la cellule avec les données
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // Déqueue une cellule réutilisable (le "reuseIdentifier" est un identifiant unique pour chaque type de cellule)
         let cell = tableView.dequeueReusableCell(withIdentifier: "DocumentCell", for: indexPath)
         
-        // Récupérer l'objet DocumentFile pour cette ligne
-        let document = DocumentTableViewController.testDocuments[indexPath.row]
+        // Récupérer l'objet DocumentFile correspondant à la ligne dans le tableau
+        let document = listFileInBundle()[indexPath.row]
         
         // Configurer le titre et la taille du document dans la cellule
         cell.textLabel?.text = document.title
         cell.detailTextLabel?.text = "\(document.size) Ko"
         
-        // Si vous avez une image à afficher, utilisez imageName (par exemple, charger une image locale ou depuis une URL)
-        if let imageName = document.imageName {
-            // Exemple de chargement d'image (à adapter selon vos besoins)
-            cell.imageView?.image = UIImage(named: imageName) // Assurez-vous que l'image existe dans les ressources
-        } else {
-            // Sinon, vous pouvez afficher une image par défaut
-            cell.imageView?.image = UIImage(named: "defaultImage")
-        }
+//        // Si l'image existe, on l'affiche dans l'imageView
+//        if let imageName = document.imageName {
+//            cell.imageView?.image = UIImage(named: imageName) // Assurez-vous que l'image est dans les ressources
+//        } else {
+//            // Image par défaut si aucune image n'est spécifiée
+//            cell.imageView?.image = UIImage(named: "defaultImage")
+//        }
         
         return cell
     }
-    
-    // Optionnel : Vous pouvez aussi implémenter cette méthode pour ajouter des actions lors de la sélection d'une cellule
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Action lors de la sélection d'une ligne
-        let document = DocumentTableViewController.testDocuments[indexPath.row]
-        print("Document sélectionné : \(document.title)")
+
+        
+    func listFileInBundle() -> [DocumentFile] {
+        // initialisation du file manageur
+        let fm = FileManager.default
+        // chargement du chemin du bundle
+        let path = Bundle.main.resourcePath!
+        // on recupere les fichier
+        let items = try! fm.contentsOfDirectory(atPath: path)
+        // on initialise le tableau de DocumentFile
+        var documentListBundle = [DocumentFile]()
+        
+        // pour chaque fichier trouvé
+        for item in items {
+            //si c'est une image et qu'il a le suffix DS_Store
+            if !item.hasSuffix("DS_Store") && item.hasSuffix(".jpg") || item.hasSuffix(".png") || item.hasSuffix(".jpeg") {
+                //on set l'url
+                let currentUrl = URL(fileURLWithPath: path + "/" + item)
+                // on recupère ses infos
+                let resourcesValues = try! currentUrl.resourceValues(forKeys: [.contentTypeKey, .nameKey, .fileSizeKey])
+                //on initialise le documentfile avec toute les infos nécéssaires
+                let document = DocumentFile(
+                    title: resourcesValues.name!,
+                    size: resourcesValues.fileSize ?? 0,
+                    imageName: item,
+                    url: currentUrl,
+                    type: resourcesValues.contentType!.description
+                )
+                // on ajoute le doc a la liste
+                documentListBundle.append(document)
+            }
+        }
+        
+        // Vérifier le contenu de la liste
+        print("Documents chargés : \(documentListBundle.count)")
+        // on les return
+        return documentListBundle
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        // Vérifie si c'est la bonne segue
+        if segue.identifier == "ShowDocumentSegue" {
+            // Récupérer l'index de l'élément sélectionné
+            if let indexPath = tableView.indexPathForSelectedRow {
+                let document = documentListBundle[indexPath.row]  // Utiliser documentListBundle, pas une autre liste
+                
+                // Vérifier que la destination est le bon ViewController (ImageViewController)
+                if let destinationVC = segue.destination as? ImageViewController {
+                    
+                    // Passer les données au ImageViewController
+                    destinationVC.titleText = document.title  // Passer le titre
+                    destinationVC.image = UIImage(named: document.imageName ?? "defaultImage") // Charger l'image
+                }
+            }
+        }
+    }
+	
+
+
+    
+
+
+// Structure de données pour un document
+struct DocumentFile {
+    var title: String
+    var size: Int
+    var imageName: String?
+    var url: URL
+    var type: String
+}
 
 
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+
+    //override func viewDidLoad() {
+        //super.viewDidLoad()
 
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
@@ -142,4 +194,4 @@ class DocumentTableViewController: UITableViewController {
     }
     */
 
-}
+
