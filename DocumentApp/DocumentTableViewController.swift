@@ -4,10 +4,9 @@ import MobileCoreServices
 
 class DocumentTableViewController: UITableViewController, QLPreviewControllerDataSource, UIDocumentPickerDelegate {
     
-    // Déclaration d'une variable pour stocker les documents chargés
     var documentListBundle: [DocumentFile] = []  // Liste des fichiers dans le bundle
     var documentListApp: [DocumentFile] = []  // Liste des fichiers ajoutés par l'utilisateur
-    var selectedDocumentIndex: Int?  // Variable pour garder la trace du document sélectionné
+    var selectedDocument: DocumentFile?  // Variable pour garder la trace du document sélectionné
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -16,14 +15,11 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
         documentListBundle = listFilesInBundle()  // Charger les fichiers du bundle
         documentListApp = listFilesInDocumentsDirectory()  // Charger les fichiers du dossier Documents
         
-        // Recharger la table si les données changent (ajout de nouveaux fichiers)
         tableView.reloadData()
         
-        // Ajouter un bouton à la barre de navigation pour ajouter un document
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addDocument))
     }
     
-    // Récupère la liste des fichiers dans le bundle de l'application
     func listFilesInBundle() -> [DocumentFile] {
         guard let bundlePath = Bundle.main.resourcePath else {
             return []
@@ -56,7 +52,6 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
         return documentList
     }
     
-    // Récupère la liste des fichiers dans le répertoire Documents de l'application
     func listFilesInDocumentsDirectory() -> [DocumentFile] {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let fileManager = FileManager.default
@@ -86,17 +81,14 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
         return documentList
     }
 
-    // Indique au Controller combien de sections il doit afficher
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
 
-    // Indique au Controller combien de cellules il doit afficher
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return documentListBundle.count + documentListApp.count
     }
     
-    // Cellule configurée avec le document sélectionné
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "DocumentCell", for: indexPath)
         
@@ -110,11 +102,30 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
         // Configuration de la cellule
         cell.textLabel?.text = document.title
         cell.detailTextLabel?.text = "\(document.size) Ko"
-        cell.imageView?.image = UIImage(named: document.imageName ?? "defaultImage")
+        
+        // Choisir une image en fonction du type de document
+        if let imageName = getImageName(forFileType: document.type) {
+            cell.imageView?.image = UIImage(named: imageName)
+        } else {
+            cell.imageView?.image = UIImage(named: "defaultImage")  // Image par défaut
+        }
         
         return cell
     }
     
+    func getImageName(forFileType fileType: String) -> String? {
+        switch fileType {
+        case "com.adobe.pdf":   // Type MIME pour PDF
+            return "pdfIcon"
+        case "public.text":     // Type MIME pour fichier texte
+            return "textIcon"
+        case "public.image":    // Type MIME pour image
+            return "imageIcon"
+        default:
+            return nil
+        }
+    }
+
     // Méthode appelée lors de la sélection d'un document
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let document: DocumentFile
@@ -124,6 +135,7 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
             document = documentListApp[indexPath.row - documentListBundle.count]
         }
         
+        selectedDocument = document  // Enregistrer le document sélectionné
         instantiateQLPreviewController(withUrl: document.url)
     }
     
@@ -142,10 +154,12 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
     }
     
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
-        return documentListApp[index].url as QLPreviewItem
+        guard let document = selectedDocument else {
+            fatalError("Aucun document sélectionné.")
+        }
+        return document.url as QLPreviewItem
     }
     
-    // Méthode appelée lors de l'appui sur le bouton "Ajouter un document"
     @objc func addDocument() {
         let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf, .image, .plainText, .text], asCopy: true)
         documentPicker.delegate = self
@@ -157,10 +171,8 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         // Récupérer le fichier sélectionné
         if let selectedFileURL = urls.first {
-            // Copier le fichier dans le dossier Documents de l'application
             copyFileToDocumentsDirectory(fromUrl: selectedFileURL)
             
-            // Ajouter le fichier à la liste des documents
             let fileName = selectedFileURL.lastPathComponent
             let resourcesValues = try? selectedFileURL.resourceValues(forKeys: [.contentTypeKey, .fileSizeKey])
             let fileSize = resourcesValues?.fileSize ?? 0
@@ -174,7 +186,6 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
                 type: fileType
             )
             
-            // Ajouter le document à la liste des documents de l'application
             documentListApp.append(document)
             tableView.reloadData()
         }
@@ -206,7 +217,6 @@ struct DocumentFile {
     var url: URL
     var type: String
 }
-
 
 
 
@@ -253,7 +263,7 @@ struct DocumentFile {
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+        }
     }
     */
 
@@ -281,5 +291,6 @@ struct DocumentFile {
         // Pass the selected object to the new view controller.
     }
     */
+
 
 
