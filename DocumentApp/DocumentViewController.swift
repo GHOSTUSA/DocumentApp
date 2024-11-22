@@ -1,19 +1,21 @@
 import UIKit
 
-class ImageViewController: UIViewController {
-
-    // Variables pour recevoir les données
-    var image: UIImage?
+class DocumentViewController: UIViewController {
     
-    // Outlets pour l'affichage
-    @IBOutlet weak var imageView: UIImageView!
-
+    
+    
+    var imageName: String?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Mettre à jour l'interface avec les données reçues
-        if let image = image {
-            imageView.image = image
+        
+        // 1. Vérifier que imageName n'est pas nil
+        if let imageName = imageName {
+            // 2. Afficher l'image dans l'ImageView
+          
+        } else {
+            // Si imageName est nil, afficher une image par défaut ou gérer l'erreur
+          
         }
     }
 }

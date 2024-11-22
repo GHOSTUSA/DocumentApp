@@ -40,9 +40,6 @@
                                         </label>
                                     </subviews>
                                 </tableViewCellContentView>
-                                <connections>
-                                    <segue destination="GTO-1g-f1J" kind="show" identifier="ShowDocumentSegue" id="1PT-aF-t0r"/>
-                                </connections>
                             </tableViewCell>
                         </prototypes>
                         <connections>
@@ -78,12 +75,12 @@
         <scene sceneID="sX2-Fk-uiB">
             <objects>
                 <viewController id="GTO-1g-f1J" customClass="DocumentViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="4q8-8k-cbQ">
+                    <view key="view" contentMode="scaleToFill" id="4q8-8k-cbQ" customClass="DocumentViewController">
                         <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="307033431_1145985666294330_5332053598872096386_n.jpg" translatesAutoresizingMaskIntoConstraints="NO" id="Pbt-VV-TWZ">
-                                <rect key="frame" x="0.0" y="103" width="430" height="795"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="W3l-fe-B4c">
+                                <rect key="frame" x="0.0" y="103" width="430" height="829"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </imageView>
                         </subviews>
@@ -98,7 +95,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="307033431_1145985666294330_5332053598872096386_n.jpg" width="960" height="541"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

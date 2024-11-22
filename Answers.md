@@ -42,3 +42,23 @@ Un sergue permet de faire la transition entre 2 ecrans
 
 c'est une règle qui définit la position, la taille et les relations entre les différents éléments d'interface dans une vue 
 
+# 9-QLPreview
+
+Utiliser un disclosureIndicator rend l'interface plus intuitive et permet de respecter les conventions de design d'Apple, et simplifie la gestion de la navigation dans l'application. Il aide à indiquer clairement à l'utilisateur qu'il peut interagir avec une cellule pour obtenir plus d'informations, tout en maintenant une interface propre et fonctionnelle.
+
+
+# 10-Importation
+
+Un #selector est une manière de référencer une méthode dans le code qui sera appelée en réponse à un événement. Le #selector est utilisé pour lier une méthode à un événement
+
+.add est une valeur de l'énumération UIBarButtonSystemItem. Il est utilisé pour spécifier l'icône du bouton dans la barre de navigation
+
+Le mot-clé @objc permet à cette méthode Swift d'être utilisée avec des mécanismes qui viennent de l'Objective-C, tels que les #selector et les gestionnaires d'événements. Sans cela, la méthode serait ignorée par ces mécanismes.
+
+Pour les boutons :
+let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addDocument))
+let refreshButton = UIBarButtonItem(barButtonSystemItem: .refresh, target: self, action: #selector(refreshDocuments))
+
+navigationItem.rightBarButtonItems = [addButton, refreshButton]
+
+La fonction defer est utilisée en Swift pour garantir que certains blocs de code seront exécutés avant que la fonction ou le scope actuel ne se termine, peu importe comment ce dernier est quitté 
