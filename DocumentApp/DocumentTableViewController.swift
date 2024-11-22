@@ -2,140 +2,85 @@ import UIKit
 import QuickLook
 import MobileCoreServices
 
-class DocumentTableViewController: UITableViewController, UIDocumentPickerDelegate, QLPreviewControllerDataSource {
+class DocumentTableViewController: UITableViewController, QLPreviewControllerDataSource {
     
+    // Déclaration d'une variable pour stocker les documents chargés
     var documentListBundle: [DocumentFile] = []  // Liste des fichiers dans le bundle
-    var documentListApp: [DocumentFile] = []  // Liste des fichiers ajoutés par l'utilisateur
+    var selectedDocumentIndex: Int?  // Variable pour garder la trace du document sélectionné
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Charger les fichiers dès que la vue est prête
-        documentListBundle = listFilesInBundle()  // Fichiers du bundle
-        documentListApp = listFilesInDocumentsDirectory()  // Fichiers de l'utilisateur
+        documentListBundle = listFilesInBundle()  // Charger les fichiers du bundle
         
-        // Recharger la table pour afficher les fichiers
+        // Recharger la table si les données changent (ajout de nouveaux fichiers)
         tableView.reloadData()
-        
-        // Ajouter un bouton pour ajouter un document
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addDocument))
     }
     
-    @objc func addDocument() {
-        // Lancer le Document Picker avec uniquement les types de fichiers acceptés
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf, .image], asCopy: true)
-        documentPicker.delegate = self
-        documentPicker.allowsMultipleSelection = false  // Choix d'un seul fichier
-        present(documentPicker, animated: true, completion: nil)
-    }
-    
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        if let selectedFileURL = urls.first {
-            copyFileToDocumentsDirectory(fromUrl: selectedFileURL)
-            
-            let fileName = selectedFileURL.lastPathComponent
-            let resourcesValues = try? selectedFileURL.resourceValues(forKeys: [.contentTypeKey, .fileSizeKey])
-            let fileSize = resourcesValues?.fileSize ?? 0
-            let fileType = resourcesValues?.contentType?.description ?? "Unknown"
-            
-            let document = DocumentFile(
-                title: fileName,
-                size: fileSize,
-                imageName: fileName,
-                url: selectedFileURL,
-                type: fileType
-            )
-            
-            documentListApp.append(document)
-            tableView.reloadData()
-        }
-    }
-    
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        print("L'utilisateur a annulé le choix du document.")
-    }
-    
-    func copyFileToDocumentsDirectory(fromUrl url: URL) {
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let destinationUrl = documentsDirectory.appendingPathComponent(url.lastPathComponent)
-        
-        do {
-            try FileManager.default.copyItem(at: url, to: destinationUrl)
-        } catch {
-            print("Erreur lors de la copie du fichier: \(error)")
-        }
-    }
-    
-    func listFilesInDocumentsDirectory() -> [DocumentFile] {
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileManager = FileManager.default
-        let items = try? fileManager.contentsOfDirectory(atPath: documentsDirectory.path)
-        
-        var documentList = [DocumentFile]()
-        for item in items ?? [] {
-            let currentUrl = documentsDirectory.appendingPathComponent(item)
-            let resourcesValues = try? currentUrl.resourceValues(forKeys: [.contentTypeKey, .nameKey, .fileSizeKey])
-            
-            guard let resourceValues = resourcesValues else { continue }
-            
-            let document = DocumentFile(
-                title: resourceValues.name ?? item,
-                size: resourceValues.fileSize ?? 0,
-                imageName: item,
-                url: currentUrl,
-                type: resourceValues.contentType?.description ?? "Unknown"
-            )
-            
-            documentList.append(document)
-        }
-        
-        return documentList
-    }
-    
+    // Récupère la liste des fichiers dans le bundle de l'application
     func listFilesInBundle() -> [DocumentFile] {
-        let fileManager = FileManager.default
-        guard let resourceURL = Bundle.main.resourceURL else { return [] }
-        let items = try? fileManager.contentsOfDirectory(atPath: resourceURL.path)
+        // 1. Récupérer l'URL du répertoire bundle de l'application
+        guard let bundlePath = Bundle.main.resourcePath else {
+            return []
+        }
         
+        // 2. Initialiser FileManager pour interagir avec le système de fichiers
+        let fileManager = FileManager.default
+        
+        // 3. Essayer de récupérer les fichiers dans le répertoire du bundle
+        let items = try? fileManager.contentsOfDirectory(atPath: bundlePath)
+        
+        // 4. Initialiser un tableau pour stocker les documents trouvés
         var documentList = [DocumentFile]()
+        
+        // 5. Parcourir chaque fichier trouvé dans le bundle
         for item in items ?? [] {
-            let currentUrl = resourceURL.appendingPathComponent(item)
+            // 6. Créer l'URL complète du fichier en combinant le répertoire du bundle et le nom du fichier
+            let currentUrl = URL(fileURLWithPath: bundlePath).appendingPathComponent(item)
+            
+            // 7. Récupérer les informations du fichier (nom, type, taille) via resourceValues
             let resourcesValues = try? currentUrl.resourceValues(forKeys: [.contentTypeKey, .nameKey, .fileSizeKey])
             
-            guard let resourceValues = resourcesValues else { continue }
+            // Vérifier que les ressources sont bien récupérées
+            guard let resourceValues = resourcesValues else {
+                continue  // Si les ressources ne peuvent pas être récupérées, passer au fichier suivant
+            }
             
+            // 8. Créer un objet DocumentFile avec les informations récupérées
             let document = DocumentFile(
-                title: resourceValues.name ?? item,
-                size: resourceValues.fileSize ?? 0,
-                imageName: item,
-                url: currentUrl,
-                type: resourceValues.contentType?.description ?? "Unknown"
+                title: resourceValues.name ?? item,  // Utiliser le nom du fichier ou le nom de l'élément si nécessaire
+                size: resourceValues.fileSize ?? 0,  // Utiliser la taille du fichier ou 0 si la taille n'est pas disponible
+                imageName: item,  // Utiliser le nom du fichier pour l'image (ou un type par défaut si nécessaire)
+                url: currentUrl,  // URL complète du fichier
+                type: resourceValues.contentType?.description ?? "Unknown"  // Type MIME du fichier (ou "Unknown" si non disponible)
             )
             
+            // 9. Ajouter le document à la liste des documents
             documentList.append(document)
         }
         
+        // 10. Retourner la liste des documents trouvés dans le bundle
         return documentList
     }
 
+    // Indique au Controller combien de sections il doit afficher
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
 
+    // Indique au Controller combien de cellules il doit afficher
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return documentListBundle.count + documentListApp.count
+        return documentListBundle.count  // Compter les fichiers dans le bundle
     }
     
+    // Cellule configurée avec le document sélectionné
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "DocumentCell", for: indexPath)
         
-        let document: DocumentFile
-        if indexPath.row < documentListBundle.count {
-            document = documentListBundle[indexPath.row]
-        } else {
-            document = documentListApp[indexPath.row - documentListBundle.count]
-        }
+        let document = documentListBundle[indexPath.row]
         
+        // Configuration de la cellule
         cell.textLabel?.text = document.title
         cell.detailTextLabel?.text = "\(document.size) Ko"
         cell.imageView?.image = UIImage(named: document.imageName ?? "defaultImage")
@@ -143,47 +88,39 @@ class DocumentTableViewController: UITableViewController, UIDocumentPickerDelega
         return cell
     }
     
-    // Gestion de la sélection d'un document pour prévisualiser
+    // Méthode appelée lors de la sélection d'un document
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let document: DocumentFile
-        if indexPath.row < documentListBundle.count {
-            document = documentListBundle[indexPath.row]
-        } else {
-            document = documentListApp[indexPath.row - documentListBundle.count]
-        }
+        // Enregistrer l'index du document sélectionné
+        selectedDocumentIndex = indexPath.row
         
-        instantiateQLPreviewController(withUrl: document.url)
+        // Appeler la fonction pour instancier le QLPreviewController
+        instantiateQLPreviewController()
     }
-
-    func instantiateQLPreviewController(withUrl url: URL) {
+    
+    // Fonction pour instancier et afficher un QLPreviewController
+    func instantiateQLPreviewController() {
         let previewController = QLPreviewController()
         previewController.dataSource = self
         
-        // Log pour voir l'URL passée et celle recherchée
-        print("URL passée pour la prévisualisation: \(url.absoluteString)")
-
-        // Recherche de l'index de l'élément sélectionné dans documentListApp
-        if let index = documentListApp.firstIndex(where: { $0.url.absoluteString == url.absoluteString }) {
-            print("Document trouvé à l'index \(index) : \(documentListApp[index].title)")
-            previewController.currentPreviewItemIndex = index
-            navigationController?.pushViewController(previewController, animated: true)
-        } else {
-            print("Erreur : l'élément à prévisualiser n'a pas été trouvé.")
-        }
+        // Utiliser l'index du document sélectionné
+        previewController.currentPreviewItemIndex = selectedDocumentIndex ?? 0
+        
+        navigationController?.pushViewController(previewController, animated: true)
     }
-
+    
+    // MARK: - QLPreviewControllerDataSource
+    
     func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
-        return documentListApp.count > 0 ? 1 : 0
+        return 1  // Nous affichons un seul fichier à la fois
     }
-
+    
     func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
-        guard index >= 0 && index < documentListApp.count else {
-            fatalError("Index hors limites")
-        }
-        return documentListApp[index].url as QLPreviewItem
+        // Utiliser l'index du document sélectionné pour retourner le bon fichier
+        return documentListBundle[selectedDocumentIndex ?? 0].url as QLPreviewItem
     }
 }
 
+// Structure de données pour un document
 struct DocumentFile {
     var title: String
     var size: Int
@@ -191,6 +128,8 @@ struct DocumentFile {
     var url: URL
     var type: String
 }
+
+
 
 
 
