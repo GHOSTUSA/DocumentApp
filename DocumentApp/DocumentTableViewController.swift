@@ -52,21 +52,34 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
         return documentList
     }
     
+    // Fonction pour récupérer la liste des fichiers dans le répertoire "Documents" de l'application
     func listFilesInDocumentsDirectory() -> [DocumentFile] {
+        // Récupérer l'URL du répertoire Documents dans l'espace de stockage de l'utilisateur.
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        
+        // Créer une instance de FileManager pour interagir avec le système de fichiers.
         let fileManager = FileManager.default
+        
+        // Récupérer la liste des fichiers dans le répertoire "Documents".
         let items = try? fileManager.contentsOfDirectory(atPath: documentsDirectory.path)
         
+        // Créer un tableau vide pour stocker les objets
         var documentList = [DocumentFile]()
         
+        // Parcourir tous les fichiers récupérés
         for item in items ?? [] {
+            // Construire l'URL complète du fichier
             let currentUrl = documentsDirectory.appendingPathComponent(item)
+            
+            // Récupérer les données
             let resourcesValues = try? currentUrl.resourceValues(forKeys: [.contentTypeKey, .nameKey, .fileSizeKey])
             
+            // Si on y arrive pas passer au fichier suivant dans la boucle.
             guard let resourceValues = resourcesValues else {
                 continue
             }
             
+            // Créer un objet `DocumentFile` en utilisant les données récupérées.
             let document = DocumentFile(
                 title: resourceValues.name ?? item,
                 size: resourceValues.fileSize ?? 0,
@@ -75,11 +88,14 @@ class DocumentTableViewController: UITableViewController, QLPreviewControllerDat
                 type: resourceValues.contentType?.description ?? "Unknown"
             )
             
+            // Ajouter l'objet à la liste des documents.
             documentList.append(document)
         }
         
+        // Retourner la liste des fichiers
         return documentList
     }
+
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
